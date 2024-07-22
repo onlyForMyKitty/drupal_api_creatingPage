@@ -1,0 +1,106 @@
+<?php
+
+/**
+ * @file
+ * A simple module to display a page with text and handle button click.
+ */
+
+/**
+ * Implements hook_menu().
+ */
+function modulepage_menu() {
+  $items = array();
+
+  // Define a new page at the path 'modulepage'
+  $items['modulepage'] = array(
+    'title' => 'Simple Page',
+    'page callback' => 'modulepage_content',
+    'access callback' => TRUE,
+    'type' => MENU_CALLBACK,
+  );
+
+  // Define a new page at the path 'generatedPage'
+  $items['generatedPage'] = array(
+    'title' => 'Generated Page',
+    'page callback' => 'modulepage_generated_page',
+    'access callback' => TRUE,
+    'type' => MENU_CALLBACK,
+  );
+
+  return $items;
+}
+
+/**
+ * Page callback function to display content.
+ */
+function modulepage_content() {
+  // Create a form with AJAX callback
+  $form = drupal_get_form('modulepage_button_form');
+
+  // Create content array for rendering
+  $content = array();
+  $content[] = array(
+    '#markup' => '<p>' . t('Привет 123') . '</p>',
+  );
+  $content[] = $form;
+
+  // Render the content array
+  return drupal_render($content);
+}
+
+/**
+ * Form builder function for the button.
+ */
+function modulepage_button_form($form, &$form_state) {
+  $form['button'] = array(
+    '#type' => 'button',
+    '#value' => t('Click me'),
+    '#ajax' => array(
+      'callback' => 'modulepage_button_callback',
+      'wrapper' => 'button-message',
+    ),
+  );
+
+  $form['message'] = array(
+    '#type' => 'markup',
+    '#markup' => '<div id="button-message"></div>',
+  );
+
+  return $form;
+}
+
+/**
+ * AJAX callback function for the button.
+ */
+function modulepage_button_callback($form, &$form_state) {
+  // Create a new node of type 'page'
+  $node = new stdClass();
+  $node->type = 'page'; // Assuming 'page' is the content type you want
+  node_object_prepare($node);
+  $node->title = 'Generated Page';
+  $node->body[LANGUAGE_NONE][0]['value'] = 'Это созданная страница';
+  $node->status = 1; // Published
+  $node->promote = 0;
+  $node->sticky = 0;
+
+  // Save the node
+  node_save($node);
+
+  // Generate the URL of the newly created page
+  $url = url('generatedPage', array('absolute' => TRUE));
+
+  $response = array();
+  $response['#type'] = 'markup';
+  $response['#markup'] = '<p>' . t('Page created: <a href="!url">Visit the generated page</a>', array('!url' => $url)) . '</p>';
+
+  return $response;
+}
+
+/**
+ * Page callback function for the generated page.
+ */
+function modulepage_generated_page() {
+  return array(
+    '#markup' => '<p>' . t('Это созданная страница') . '</p>',
+  );
+}
